@@ -28,17 +28,15 @@ const verifyPassword = async (password, salt, expectedHash) => {
   if (!globalThis.crypto?.subtle) {
     throw new Error('Secure password verification is unavailable in this browser. Use a modern browser on HTTPS or localhost.')
   }
-  let storedSalt
-  let expected
   try {
-    storedSalt = decodeBase64(salt)
-    expected = decodeBase64(expectedHash)
+    const storedSalt = decodeBase64(salt)
+    const actualHash = decodeBase64((await hashPassword(password, storedSalt)).passwordHash)
+    const expected = decodeBase64(expectedHash)
+    return actualHash.length === expected.length
+      && actualHash.reduce((difference, byte, index) => difference | (byte ^ expected[index]), 0) === 0
   } catch {
     return false
   }
-  if (storedSalt.length !== 16 || expected.length !== 32) return false
-  const actualHash = decodeBase64((await hashPassword(password, storedSalt)).passwordHash)
-  return actualHash.reduce((difference, byte, index) => difference | (byte ^ expected[index]), 0) === 0
 }
 
 const readRegisteredUsers = async (role) => {
