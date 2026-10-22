@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Lenis from 'lenis'
 import {
   Accordion,
   AccordionDetails,
@@ -36,14 +39,45 @@ import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROLE_DASHBOARD_PATH } from '../../data/mockData'
-import { faqs, featureCategories, journeys, platformPillars } from './landingFeatures'
+import { faqs, featureCategories, platformPillars } from './landingFeatures'
 import './Landing.css'
+import 'lenis/dist/lenis.css'
 
+const LandingParticleField = lazy(() => import('./LandingParticleField'))
 const MotionBox = motion.create(Box)
 const MotionPaper = motion.create(Paper)
+gsap.registerPlugin(ScrollTrigger)
 
-const roles = ['Student', 'Teacher', 'Parent', 'Principal', 'Management', 'Future Exam Controller']
+function DeferredParticleField() {
+  const [isNearViewport, setIsNearViewport] = useState(false)
+  const fieldRef = useRef(null)
+
+  useEffect(() => {
+    if (!fieldRef.current) return undefined
+    if (!('IntersectionObserver' in window)) {
+      setIsNearViewport(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsNearViewport(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '240px 0px' })
+    observer.observe(fieldRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={fieldRef} className="landing-particle-field-shell" aria-hidden="true">
+      {isNearViewport && <Suspense fallback={null}><LandingParticleField /></Suspense>}
+    </div>
+  )
+}
+
 const releaseFilters = ['All roadmap stages', 'Phase 1', 'Planned & future']
+const featuredCategoryIds = ['institution', 'operations', 'teaching', 'assessments']
 
 const pillarIcons = {
   EduOS: AccountBalanceRoundedIcon,
@@ -53,15 +87,6 @@ const pillarIcons = {
   ExamShield: FactCheckRoundedIcon,
   GovConnect: GroupsRoundedIcon,
   'Research & Innovation Lab': ScienceRoundedIcon,
-}
-
-const journeyIcons = {
-  school: SchoolRoundedIcon,
-  teach: MenuBookRoundedIcon,
-  family: GroupsRoundedIcon,
-  campus: AccountBalanceRoundedIcon,
-  research: ScienceRoundedIcon,
-  assessment: FactCheckRoundedIcon,
 }
 
 const featureIcons = [
@@ -94,12 +119,58 @@ export default function Landing() {
   const [search, setSearch] = useState('')
   const [releaseFilter, setReleaseFilter] = useState(releaseFilters[0])
   const [activeCategory, setActiveCategory] = useState('all')
+  const [expandedCategories, setExpandedCategories] = useState(() => new Set())
+  const [showAllCategories, setShowAllCategories] = useState(false)
+  const pillarsRef = useRef(null)
+  const lenisRef = useRef(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate(ROLE_DASHBOARD_PATH[user.role] || '/')
     }
   }, [isAuthenticated, user, navigate])
+
+  useEffect(() => {
+    if (!pillarsRef.current || reduceMotion) return undefined
+
+    const lenis = new Lenis({ duration: 1.1, smoothWheel: true })
+    lenisRef.current = lenis
+    const syncScrollTrigger = () => ScrollTrigger.update()
+    let frameId
+    lenis.on('scroll', syncScrollTrigger)
+
+    const animateScroll = time => {
+      lenis.raf(time)
+      frameId = window.requestAnimationFrame(animateScroll)
+    }
+    frameId = window.requestAnimationFrame(animateScroll)
+
+    const context = gsap.context(() => {
+      gsap.utils.toArray('.landing-pillar-card').forEach(card => {
+        gsap.fromTo(card, {
+          autoAlpha: 0,
+          filter: 'blur(8px)',
+        }, {
+          autoAlpha: 1,
+          filter: 'blur(0px)',
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 84%',
+            once: true,
+          },
+        })
+      })
+    }, pillarsRef)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      context.revert()
+      lenis.destroy()
+      lenisRef.current = null
+    }
+  }, [reduceMotion])
 
   const visibleCategories = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -116,13 +187,36 @@ export default function Landing() {
   }, [activeCategory, releaseFilter, search])
 
   const visibleCount = visibleCategories.reduce((total, category) => total + category.visibleFeatures.length, 0)
+  const catalogIsFiltered = Boolean(search.trim()) || activeCategory !== 'all' || releaseFilter !== releaseFilters[0]
+  const displayedCategories = showAllCategories || catalogIsFiltered
+    ? visibleCategories
+    : visibleCategories.filter(category => featuredCategoryIds.includes(category.id))
+  const displayedCount = displayedCategories.reduce((total, category) => (
+    total + (search.trim() || expandedCategories.has(category.id)
+      ? category.visibleFeatures.length
+      : Math.min(category.visibleFeatures.length, 3))
+  ), 0)
   const totalFeatures = featureCategories.reduce((total, category) => total + category.features.length, 0)
+
+  const toggleCategoryExpanded = id => {
+    setExpandedCategories(current => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const scrollToCategory = id => {
     setActiveCategory(id)
     setSearch('')
     setReleaseFilter(releaseFilters[0])
-    window.setTimeout(() => document.getElementById('feature-explorer')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }), 0)
+    window.setTimeout(() => {
+      const target = document.getElementById('feature-explorer')
+      if (!target) return
+      if (lenisRef.current) lenisRef.current.scrollTo(target)
+      else target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })
+    }, 0)
   }
 
   const reveal = {
@@ -143,7 +237,6 @@ export default function Landing() {
           <Box component="nav" className="landing-nav" aria-label="Main navigation">
             <a href="#pillars">Platform</a>
             <a href="#feature-explorer">Features</a>
-            <a href="#research-lab">Research Lab</a>
             <a href="#roadmap">Roadmap</a>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
@@ -175,7 +268,7 @@ export default function Landing() {
                 <strong> Trusted Assessments.</strong>
               </Typography>
               <Typography className="landing-hero__description">
-                Bring assignments, student research, school management, learning progress, parent engagement and secure examination planning into one connected education vision.
+                One connected platform for school operations, learning, assessment and family engagement.
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} className="landing-hero__actions">
                 <Button
@@ -184,7 +277,7 @@ export default function Landing() {
                   endIcon={<ArrowForwardRoundedIcon />}
                   href="#feature-explorer"
                 >
-                  Explore all features
+                  Explore features
                 </Button>
                 <Button className="landing-button landing-button--outline" href="#contact">
                   Request a demo / Contact us
@@ -192,7 +285,7 @@ export default function Landing() {
               </Stack>
               <Stack direction="row" className="landing-hero__proof">
                 <span className="landing-proof-dot" />
-                <Typography>Designed for the whole school community</Typography>
+                <Typography>For the whole school community</Typography>
                 <span>·</span>
                 <Typography>{totalFeatures} capabilities</Typography>
               </Stack>
@@ -270,43 +363,32 @@ export default function Landing() {
           </Container>
         </Box>
 
-        <Box component="section" className="landing-audience-strip">
-          <Container maxWidth="lg" className="landing-audience-strip__inner">
-            <Typography>One platform vision, with experiences shaped for</Typography>
-            <div>{roles.map(role => <span key={role}>{role}</span>)}</div>
-          </Container>
-        </Box>
-
-        <Box component="section" id="pillars" className="landing-section landing-pillars">
+        <Box component="section" id="pillars" className="landing-section landing-pillars" ref={pillarsRef}>
+          <DeferredParticleField />
           <Container maxWidth="lg">
             <MotionBox {...reveal} className="landing-section-heading">
               <span className="landing-kicker">A connected platform</span>
               <Typography component="h2">Seven pillars. One school community.</Typography>
-              <Typography>Start with the product areas that matter to you. Each pillar takes you straight to its capabilities below.</Typography>
+              <Typography>Explore the core products in one connected school platform.</Typography>
             </MotionBox>
             <Box className="landing-pillar-grid">
               {platformPillars.map((pillar, index) => {
                 const Icon = pillarIcons[pillar.title]
                 return (
                   <MotionPaper
-                    {...reveal}
                     key={pillar.title}
                     className={`landing-pillar-card landing-tone-${pillar.tone}`}
                     elevation={0}
-                    whileHover={reduceMotion ? undefined : {
-                      y: -7,
-                      scale: 1.025,
-                      rotate: index % 2 ? 0.6 : -0.6,
-                      transition: { duration: 0.22, ease: 'easeOut' },
-                    }}
+                    whileHover={reduceMotion ? undefined : { scale: 1.015, transition: { duration: 0.22, ease: 'easeOut' } }}
                     whileTap={reduceMotion ? undefined : { scale: 0.985 }}
                     onClick={() => scrollToCategory(pillar.category)}
                     onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') scrollToCategory(pillar.category) }}
                     role="link"
                     tabIndex={0}
                     aria-label={`Explore ${pillar.title} features`}
-                    transition={{ ...reveal.transition, delay: reduceMotion ? 0 : (index % 4) * 0.06 }}
                   >
+                    <span className="landing-pillar-number">PILLAR {String(index + 1).padStart(2, '0')}</span>
+                    <span className="landing-pillar-node" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                     <span className="landing-pillar-icon"><Icon /></span>
                     <Typography component="h3">{pillar.title}</Typography>
                     <Typography>{pillar.description}</Typography>
@@ -323,7 +405,7 @@ export default function Landing() {
             <MotionBox {...reveal} className="landing-section-heading landing-section-heading--left">
               <span className="landing-kicker">The complete showcase</span>
               <Typography component="h2">Explore the capabilities</Typography>
-              <Typography>Browse the product vision by area, search for a capability or filter by its planned release stage.</Typography>
+              <Typography>Browse by area or release stage. Expand a group to see every capability.</Typography>
             </MotionBox>
 
             <Paper className="landing-filter-panel" elevation={0}>
@@ -353,7 +435,7 @@ export default function Landing() {
                   ))}
                 </Box>
                 <Typography className="landing-results-count">
-                  Showing <b>{visibleCount}</b> of {totalFeatures} capabilities
+                  Showing <b>{displayedCount}</b> of {visibleCount} matches
                 </Typography>
               </Box>
               <Box className="landing-category-filters" role="group" aria-label="Filter by feature area">
@@ -381,9 +463,9 @@ export default function Landing() {
               </Box>
             </Paper>
 
-            {visibleCategories.length ? (
+            {displayedCategories.length ? (
               <Box className="landing-feature-groups" id="feature-results">
-                {visibleCategories.map((category, categoryIndex) => (
+                {displayedCategories.map((category, categoryIndex) => (
                   <Box
                     component="section"
                     id={`area-${category.id}`}
@@ -399,9 +481,11 @@ export default function Landing() {
                       <Chip label={category.status} className="landing-status-chip" />
                     </Box>
                     <Box className="landing-feature-grid">
-                      {category.visibleFeatures.map(([title, description], index) => {
+                      {category.visibleFeatures
+                        .slice(0, search.trim() || expandedCategories.has(category.id) ? category.visibleFeatures.length : 3)
+                        .map(([title, description], index) => {
                         const FeatureIcon = featureIcons[(index + categoryIndex * 3) % featureIcons.length]
-                        const layoutVariant = (index + categoryIndex) % 5
+                        const layoutVariant = index === 0 ? 0 : (index + categoryIndex) % 4 + 1
                         return (
                         <MotionPaper
                           {...reveal}
@@ -421,6 +505,15 @@ export default function Landing() {
                             duration: reduceMotion ? 0 : 0.76,
                           }}
                         >
+                          <span className={`landing-feature-art landing-feature-art--${layoutVariant}`} aria-hidden="true">
+                            {index === 0 ? (
+                              <img src={`/animations/showcase-${categoryIndex % 4 + 1}.gif`} alt="" loading="lazy" />
+                            ) : (
+                              <>
+                                <i /><i /><i /><b><FeatureIcon /></b>
+                              </>
+                            )}
+                          </span>
                           <span className="landing-feature-mark"><FeatureIcon /></span>
                           <span className="landing-feature-index">{String(index + 1).padStart(2, '0')}</span>
                           <div className="landing-feature-copy">
@@ -431,8 +524,32 @@ export default function Landing() {
                         )
                       })}
                     </Box>
+                    {!search.trim() && category.visibleFeatures.length > 3 && (
+                      <button
+                        type="button"
+                        className="landing-feature-expand"
+                        aria-expanded={expandedCategories.has(category.id)}
+                        onClick={() => toggleCategoryExpanded(category.id)}
+                      >
+                        {expandedCategories.has(category.id)
+                          ? 'Show less'
+                          : `View all ${category.visibleFeatures.length} capabilities`}
+                        <ExpandMoreRoundedIcon />
+                      </button>
+                    )}
                   </Box>
                 ))}
+                {!catalogIsFiltered && visibleCategories.length > featuredCategoryIds.length && (
+                  <button
+                    type="button"
+                    className="landing-feature-areas-toggle"
+                    aria-expanded={showAllCategories}
+                    onClick={() => setShowAllCategories(value => !value)}
+                  >
+                    {showAllCategories ? 'Show fewer areas' : `View all ${visibleCategories.length} feature areas`}
+                    <ExpandMoreRoundedIcon />
+                  </button>
+                )}
               </Box>
             ) : (
               <Paper className="landing-no-results" elevation={0} id="feature-results">
@@ -445,85 +562,30 @@ export default function Landing() {
           </Container>
         </Box>
 
-        <Box component="section" id="research-lab" className="landing-research">
-          <Container maxWidth="lg" className="landing-research__inner">
-            <MotionBox {...reveal} className="landing-research__copy">
-              <span className="landing-kicker landing-kicker--light">A new student R&D vision</span>
-              <Typography component="h2">From a curious question to a research paper.</Typography>
-              <Typography>
-                The proposed Research & Innovation Lab gives students a guided path through original ideas, faculty mentorship, hands-on experiments, responsible research and publication readiness.
-              </Typography>
-              <Stack direction="row" useFlexGap flexWrap="wrap" className="landing-research-tags">
-                <span>Mentor-guided</span><span>Hands-on discovery</span><span>Responsible research</span>
-              </Stack>
-              <Button
-                className="landing-research-link"
-                href="#feature-explorer"
-                onClick={() => {
-                  setActiveCategory('research')
-                  setSearch('')
-                  setReleaseFilter(releaseFilters[0])
-                }}
-              >
-                Explore the Research Lab <ArrowForwardRoundedIcon />
-              </Button>
-            </MotionBox>
-            <MotionPaper {...reveal} className="landing-research-visual" elevation={0}>
-              <div className="landing-research-orbit landing-research-orbit--outer" />
-              <div className="landing-research-orbit landing-research-orbit--inner" />
-              <span className="landing-research-center"><ScienceRoundedIcon /></span>
-              <span className="landing-research-node landing-research-node--idea"><AutoAwesomeRoundedIcon /><small>IDEA</small></span>
-              <span className="landing-research-node landing-research-node--mentor"><GroupsRoundedIcon /><small>MENTOR</small></span>
-              <span className="landing-research-node landing-research-node--lab"><MenuBookRoundedIcon /><small>LAB</small></span>
-              <span className="landing-research-node landing-research-node--paper"><FactCheckRoundedIcon /><small>PAPER</small></span>
-              <span className="landing-research-caption">Curiosity, with a responsible path forward</span>
-            </MotionPaper>
-          </Container>
-        </Box>
-
         <Box component="section" id="benefits" className="landing-section landing-benefits">
           <Container maxWidth="lg">
             <MotionBox {...reveal} className="landing-section-heading">
               <span className="landing-kicker">Designed around people</span>
               <Typography component="h2">A better-connected school day for everyone.</Typography>
-              <Typography>Role-appropriate experiences bring the right information and next steps to each member of the community.</Typography>
+              <Typography>Useful tools for every part of the school community.</Typography>
             </MotionBox>
             <Box className="landing-role-grid">
               {[
-                ['Students', 'See assignments, feedback, progress, practice and opportunities to explore research.'],
-                ['Teachers', 'Plan learning, guide students, share feedback and stay on top of classroom follow-ups.'],
-                ['Parents', 'Follow authorized progress, coordinate with teachers and stay informed about school life.'],
-                ['Principals', 'Bring academic, operational and community priorities into a clearer view.'],
-                ['Management', 'Review permitted institution and campus indicators with appropriate boundaries.'],
-                ['Exam Controllers', 'A future role for separately governed, authorized examination programmes.'],
-              ].map(([name, description], index) => (
-                <MotionPaper {...reveal} key={name} className="landing-role-card" elevation={0} whileHover={reduceMotion ? undefined : { y: -6, transition: { duration: 0.22, ease: 'easeOut' } }} transition={{ ...reveal.transition, delay: reduceMotion ? 0 : index * 0.05 }}>
+                ['Students', 'Assignments, feedback, progress and practice.'],
+                ['Teachers', 'Plan lessons, review work and guide learning.'],
+                ['Parents', 'Follow progress and stay informed.'],
+                ['Principals', 'See academic and school priorities.'],
+                ['Management', 'Review institution and campus indicators.'],
+                ['Exam Controllers', 'Future governed examination programmes.'],
+              ].map(([name, description], index) => {
+                const RoleIcon = [SchoolRoundedIcon, MenuBookRoundedIcon, GroupsRoundedIcon, AccountBalanceRoundedIcon, TrendingUpRoundedIcon, FactCheckRoundedIcon][index]
+                return (
+                <MotionPaper {...reveal} key={name} className={`landing-role-card landing-role-card--${index + 1}`} elevation={0} whileHover={reduceMotion ? undefined : { y: -6, transition: { duration: 0.22, ease: 'easeOut' } }} transition={{ ...reveal.transition, delay: reduceMotion ? 0 : index * 0.05 }}>
                   <span className={`landing-role-number landing-role-number--${index + 1}`}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className="landing-role-art" aria-hidden="true"><RoleIcon /></span>
                   <Typography component="h3">{name}</Typography>
                   <Typography>{description}</Typography>
                 </MotionPaper>
-              ))}
-            </Box>
-          </Container>
-        </Box>
-
-        <Box component="section" id="journeys" className="landing-section landing-journeys">
-          <Container maxWidth="lg">
-            <MotionBox {...reveal} className="landing-section-heading landing-section-heading--left">
-              <span className="landing-kicker">How everything connects</span>
-              <Typography component="h2">Six journeys. One shared vision.</Typography>
-              <Typography>Connected experiences help people move from everyday school tasks to meaningful learning outcomes.</Typography>
-            </MotionBox>
-            <Box className="landing-journey-grid">
-              {journeys.map((journey, index) => {
-                const Icon = journeyIcons[journey.icon]
-                return (
-                  <MotionPaper {...reveal} key={journey.number} className="landing-journey-card" elevation={0} whileHover={reduceMotion ? undefined : { y: -6, scale: 1.015, transition: { duration: 0.22, ease: 'easeOut' } }} transition={{ ...reveal.transition, delay: reduceMotion ? 0 : index * 0.05 }}>
-                    <span className="landing-journey-icon"><Icon /></span>
-                    <span className="landing-journey-number">{journey.number}</span>
-                    <Typography component="h3">{journey.title}</Typography>
-                    <Typography>{journey.description}</Typography>
-                  </MotionPaper>
                 )
               })}
             </Box>
@@ -535,23 +597,25 @@ export default function Landing() {
             <MotionBox {...reveal} className="landing-section-heading">
               <span className="landing-kicker">A clear product horizon</span>
               <Typography component="h2">Built in thoughtful stages.</Typography>
-              <Typography>Explore what is planned for the foundation, what may follow and what remains a future, authorization-dependent vision.</Typography>
+              <Typography>See what is planned now, next and for the future.</Typography>
             </MotionBox>
             <Box className="landing-roadmap-grid">
               {[
-                ['01', 'Phase 1 foundation', 'Institution setup, everyday operations, assessment workflows and the core school experience.', 'foundation'],
-                ['02', 'Flagship & planned extensions', 'School connection, student progress, approved self-practice and the proposed student R&D vision.', 'planned'],
-                ['03', 'Future & Phase 2', 'Optional institution modules, permissioned GovConnect access and separately governed ExamShield capabilities.', 'future'],
+                ['01', 'Phase 1 foundation', 'Core school setup, operations and assessments.', 'foundation'],
+                ['02', 'Planned extensions', 'Community connection, progress and practice.', 'planned'],
+                ['03', 'Future & Phase 2', 'Optional integrations and governed exam services.', 'future'],
               ].map(([number, title, description, variant]) => (
                 <MotionPaper {...reveal} key={number} className={`landing-roadmap-card landing-roadmap-card--${variant}`} elevation={0} whileHover={reduceMotion ? undefined : { y: -6, transition: { duration: 0.22, ease: 'easeOut' } }}>
-                  <span>{number}</span>
+                  <span className="landing-roadmap-number">{number}</span>
+                  <span className="landing-roadmap-status">{variant === 'foundation' ? 'IN BUILD' : variant === 'planned' ? 'NEXT UP' : 'ON THE HORIZON'}</span>
                   <Typography component="h3">{title}</Typography>
                   <Typography>{description}</Typography>
+                  <span className="landing-roadmap-line" aria-hidden="true"><i /></span>
                 </MotionPaper>
               ))}
             </Box>
             <Typography className="landing-roadmap-note">
-              Planned scope and timing may evolve. Features labeled future, optional, proposed or authorization-dependent are not represented as currently available.
+              Plans may change. Future and optional features are not currently available.
             </Typography>
           </Container>
         </Box>
@@ -596,15 +660,50 @@ export default function Landing() {
 
       <Box component="footer" className="landing-footer">
         <Container maxWidth="lg" className="landing-footer__inner">
-          <a className="landing-brand" href="#top" aria-label="MiTRAA-Edu home">
-            <Box component="img" src="/logo.svg" alt="" />
-            <span>Edu</span>
-          </a>
-          <Typography>Smarter school operations. Connected learning. Trusted assessments.</Typography>
-          <Box className="landing-footer-links">
-            <a href="#pillars">Platform</a><a href="#feature-explorer">Features</a><a href="#faq">FAQs</a>
+          <Box className="landing-footer-cta">
+            <Box>
+              <span className="landing-footer-eyebrow">YOUR SCHOOL, IN SYNC</span>
+              <Typography component="h2">Better learning starts with a connected school.</Typography>
+              <Typography>Bring your community, everyday work and learning journeys into one thoughtful platform.</Typography>
+            </Box>
+            <Button className="landing-footer-cta-button" onClick={() => navigate('/register')} endIcon={<ArrowForwardRoundedIcon />}>
+              Let’s get started
+            </Button>
           </Box>
-          <Typography className="landing-copyright">© 2026 MiTRAA-Edu</Typography>
+          <Box className="landing-footer-main">
+            <Box className="landing-footer-brand-column">
+              <a className="landing-brand" href="#top" aria-label="MiTRAA-Edu home">
+                <Box component="img" src="/logo.svg" alt="" />
+                <span>Edu</span>
+              </a>
+              <Typography>Smarter school operations. Connected learning. Trusted assessments.</Typography>
+            </Box>
+            <Box className="landing-footer-link-column">
+              <Typography component="h3">PLATFORM</Typography>
+              <a href="#pillars">Platform pillars</a>
+              <a href="#feature-explorer">Explore capabilities</a>
+              <a href="#roadmap">Product roadmap</a>
+            </Box>
+            <Box className="landing-footer-link-column">
+              <Typography component="h3">COMMUNITY</Typography>
+              <a href="#benefits">For the school community</a>
+              <a href="#faq">Frequently asked questions</a>
+              <a href="#contact">Contact & next steps</a>
+            </Box>
+            <Paper className="landing-footer-note" elevation={0}>
+              <span>MADE FOR EVERY SCHOOL COMMUNITY</span>
+              <Typography component="h3">One shared vision.</Typography>
+              <Typography>Role-appropriate experiences for students, teachers, families and school leaders.</Typography>
+              <a href="#benefits">Meet the community <ArrowForwardRoundedIcon /></a>
+            </Paper>
+          </Box>
+          <Box className="landing-footer-bottom">
+            <Typography>© 2026 MiTRAA-Edu. All rights reserved.</Typography>
+            <Box>
+              <a href="#top">Back to top ↑</a>
+              <a href="#faq">FAQs</a>
+            </Box>
+          </Box>
         </Container>
       </Box>
     </Box>

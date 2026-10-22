@@ -3,7 +3,7 @@ export const featureCategories = [
     id: 'institution',
     number: '01',
     title: 'Institution Setup & Student Lifecycle',
-    description: 'Bring the administrative foundation of a school into a structured digital workflow.',
+    description: 'Set up schools, campuses, students and staff.',
     status: 'Phase 1 Foundation',
     features: [
       ['Multi-school & Campus Setup', 'Organize institutions, campuses, academic years, terms, classes and sections.'],
@@ -20,7 +20,7 @@ export const featureCategories = [
     id: 'operations',
     number: '02',
     title: 'Day-to-Day School Operations',
-    description: 'Make everyday school management more predictable and coordinated.',
+    description: 'Coordinate schedules, attendance and daily tasks.',
     status: 'Phase 1 Foundation',
     features: [
       ['Class Timetables', 'Show organized lesson schedules to the relevant student and staff audiences.'],
@@ -37,7 +37,7 @@ export const featureCategories = [
     id: 'teaching',
     number: '03',
     title: 'Teaching & Classroom Learning',
-    description: 'Give teachers practical tools to plan lessons and support learning in context.',
+    description: 'Plan lessons, assignments and classroom support.',
     status: 'Phase 1 Core',
     features: [
       ['Lesson Planning', 'Prepare lesson plans around the configured curriculum and academic calendar.'],
@@ -56,7 +56,7 @@ export const featureCategories = [
     id: 'assessments',
     number: '04',
     title: 'Assessment Studio & School Exams',
-    description: 'Plan and run internal school assessments with clear review and evaluation steps.',
+    description: 'Create, review and evaluate school assessments.',
     status: 'Phase 1 Core',
     features: [
       ['Assessment Planning', 'Set assessment periods, subjects, grades and expected outcomes.'],
@@ -75,7 +75,7 @@ export const featureCategories = [
     id: 'connection',
     number: '05',
     title: 'Student, Teacher & Parent Connection',
-    description: 'Make school communication contextual, accountable and easy to follow.',
+    description: 'Keep school conversations and follow-ups connected.',
     status: 'Phase 1 Flagship',
     features: [
       ['Student Academic Doubts', 'Let students raise relevant class and assignment questions.'],
@@ -94,7 +94,7 @@ export const featureCategories = [
     id: 'progress',
     number: '06',
     title: 'Student Learning & Progress',
-    description: 'Help students understand what to do next, not just the last score they received.',
+    description: 'Turn feedback and results into useful next steps.',
     status: 'Phase 1 Core; later enhancements',
     features: [
       ['Personal Learning Overview', 'Show relevant classes, assignments, exams and upcoming activities.'],
@@ -111,7 +111,7 @@ export const featureCategories = [
     id: 'research',
     number: '07',
     title: 'Research & Innovation Lab — Student R&D',
-    description: 'Spark curiosity and help students progress from hands-on experiments and original ideas to well-supported research projects, papers and responsible publication.',
+    description: 'Guide student ideas from discovery to responsible research.',
     status: 'New strategic feature; release to be confirmed',
     features: [
       ['Student Research Discovery', 'Introduce accessible research themes, open questions and inspiring student-friendly challenges.'],
@@ -140,7 +140,7 @@ export const featureCategories = [
     id: 'practicepod',
     number: '08',
     title: 'PracticePod — Self-Practice Experience',
-    description: 'Give learners accessible practice from a bank of explicitly approved questions.',
+    description: 'Create practice papers from approved questions.',
     status: 'Phase 1+ / planned extension',
     features: [
       ['Practice Paper Generator', 'Choose grade, subject, chapter and allowed difficulty settings.'],
@@ -157,7 +157,7 @@ export const featureCategories = [
     id: 'finance',
     number: '09',
     title: 'Fees & Financial Administration',
-    description: 'Make institution fee workflows and family-facing records easier to follow.',
+    description: 'Track school fees, budgets and approvals.',
     status: 'Phase 1 Foundation',
     features: [
       ['Fee Structure Setup', 'Configure institution-approved fees by academic year, class and programme.'],
@@ -178,7 +178,7 @@ export const featureCategories = [
     id: 'leadership',
     number: '10',
     title: 'Institution Leadership & Reporting',
-    description: 'Give school leaders a clearer view of institution activity and priorities.',
+    description: 'Review academic results, staff activity and priorities.',
     status: 'Phase 1 Foundation',
     features: [
       ['Institution Overview', 'Bring key academic and operational indicators into a role-scoped view.'],
@@ -195,7 +195,7 @@ export const featureCategories = [
     id: 'growth',
     number: '11',
     title: 'Institution Growth & Optional Modules',
-    description: 'Extend the core platform when a school or institution needs more.',
+    description: 'Add modules when institutions need more.',
     status: 'Later / optional institution modules',
     features: [
       ['Multi-Campus Management', 'Review authorized campuses and compare permitted institution-level metrics.'],
@@ -214,7 +214,7 @@ export const featureCategories = [
     id: 'govconnect',
     number: '12',
     title: 'GovConnect & Trusted Institution Access',
-    description: 'Support approved oversight and interoperability without unrestricted data sharing.',
+    description: 'Support permissioned oversight and data exchange.',
     status: 'Future / authorization-dependent',
     features: [
       ['Permissioned Institutional Reporting', 'Share only approved reports with the relevant authority or organization.'],
@@ -229,7 +229,7 @@ export const featureCategories = [
     id: 'examshield',
     number: '13',
     title: 'ExamShield — Future Secure Exam Network',
-    description: 'A separately governed research and delivery track for authorized high-stakes examinations.',
+    description: 'Future secure services for authorized examinations.',
     status: 'Phase 2 / future authority-governed product',
     features: [
       ['Exam Programme Management', 'Define authorized exam programmes, policies, schedules and examination centres.'],
@@ -250,7 +250,7 @@ export const featureCategories = [
     id: 'trust',
     number: '14',
     title: 'Trust, Access & Inclusive Design',
-    description: 'Build trust through thoughtful access, transparency and inclusive experiences.',
+    description: 'Support secure access and inclusive experiences.',
     status: 'Cross-platform design principles',
     features: [
       ['Role-Based Access', 'Give each stakeholder only the content and actions they are authorized to see.'],
@@ -268,106 +268,67 @@ export const featureCategories = [
 export const platformPillars = [
   {
     title: 'EduOS',
-    description: 'School operations, admissions, attendance, fees, timetables and management in one connected foundation.',
+    description: 'School operations, records and management.',
     category: 'institution',
     tone: 'blue',
   },
   {
     title: 'LearnAI',
-    description: 'Digital teaching, assignments, student support and carefully reviewed AI-assisted learning.',
+    description: 'Teaching, assignments and reviewed AI learning tools.',
     category: 'teaching',
     tone: 'violet',
   },
   {
     title: 'Assessment Studio',
-    description: 'Create, review, schedule, conduct and evaluate internal school assessments.',
+    description: 'Plan and evaluate internal school assessments.',
     category: 'assessments',
     tone: 'orange',
   },
   {
     title: 'PracticePod',
-    description: 'Generate approved practice papers for digital attempts or optional print-based practice.',
+    description: 'Approved practice papers for digital or print use.',
     category: 'practicepod',
     tone: 'green',
   },
   {
     title: 'ExamShield',
-    description: 'Future, separately secured examination infrastructure for authorized multi-centre programmes.',
+    description: 'Future secure services for authorized exams.',
     category: 'examshield',
     tone: 'red',
   },
   {
     title: 'GovConnect',
-    description: 'Future permission-based reporting and integration for institutions and authorities.',
+    description: 'Future permission-based reporting and integration.',
     category: 'govconnect',
     tone: 'teal',
   },
   {
     title: 'Research & Innovation Lab',
-    description: 'A proposed student research hub connecting ideas, faculty mentors, real lab work and responsible research-paper publication.',
+    description: 'Proposed student research with faculty guidance.',
     category: 'research',
     tone: 'pink',
-  },
-]
-
-export const journeys = [
-  {
-    number: '01',
-    title: 'A student finds their next step',
-    description: 'Classes, assignments, feedback and relevant practice connect in one learning journey.',
-    icon: 'school',
-  },
-  {
-    number: '02',
-    title: 'A teacher guides progress',
-    description: 'Plan lessons, share work, review submissions and follow up on learning needs.',
-    icon: 'teach',
-  },
-  {
-    number: '03',
-    title: 'A family stays in the loop',
-    description: 'Authorized guardians follow progress, arrange meetings and receive relevant updates.',
-    icon: 'family',
-  },
-  {
-    number: '04',
-    title: 'A school runs in sync',
-    description: 'Academic calendars, operations, communication and institution records work together.',
-    icon: 'campus',
-  },
-  {
-    number: '05',
-    title: 'An idea becomes student research',
-    description: 'Students can move from a question to mentorship, lab work, review and a research portfolio.',
-    icon: 'research',
-  },
-  {
-    number: '06',
-    title: 'Assessment stays accountable',
-    description: 'Internal assessment workflows stay distinct from a future, authority-governed ExamShield.',
-    icon: 'assessment',
   },
 ]
 
 export const faqs = [
   {
     question: 'Is every capability available in the first release?',
-    answer: 'No. Each feature area is labeled by its planned scope. Some capabilities are planned for the first release, while others are later extensions, authorization-dependent integrations or a future Phase 2 product.',
+    answer: 'No. The roadmap labels what is planned, optional or future.',
   },
   {
     question: 'Is ExamShield part of the regular school assessment workflow?',
-    answer: 'No. ExamShield is presented as a separate future, authority-governed product for authorized high-stakes, multi-centre examinations. Assessment Studio is for internal school assessments.',
+    answer: 'No. Assessment Studio supports school exams; ExamShield is a separate future product.',
   },
   {
     question: 'Is the Research & Innovation Lab already available?',
-    answer: 'It is a proposed strategic direction and its release is to be confirmed. The showcase describes a vision for student research with faculty oversight, responsible practices and publication readiness.',
+    answer: 'It is proposed; release timing is to be confirmed.',
   },
   {
     question: 'Who is MiTRAA-Edu designed for?',
-    answer: 'The platform vision connects students, teachers, parents, principals, institution management and future examination partners through role-appropriate experiences.',
+    answer: 'Students, teachers, parents, principals and school management.',
   },
   {
     question: 'How can I explore the existing portal?',
-    answer: 'Use the sign-in option to choose your role, or create an account through the existing registration flow.',
+    answer: 'Choose Sign in to select your role, or create an account.',
   },
 ]
