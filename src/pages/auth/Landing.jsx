@@ -138,12 +138,44 @@ export default function Landing() {
   const pillarsRef = useRef(null)
   const lenisRef = useRef(null)
   const heroCopyRef = useRef(null)
+  const [headerOnDarkSection, setHeaderOnDarkSection] = useState(true)
 
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate(ROLE_DASHBOARD_PATH[user.role] || '/')
     }
   }, [isAuthenticated, user, navigate])
+
+  useLayoutEffect(() => {
+    const header = document.querySelector('.landing-header')
+    if (!header) return undefined
+
+    const updateHeaderTheme = () => {
+      const markerY = Math.max(
+        header.offsetHeight,
+        header.getBoundingClientRect().bottom,
+      ) + 1
+      const isOverDarkSection = Array.from(
+        document.querySelectorAll('[data-header-theme="dark"]'),
+      ).some(section => {
+        const bounds = section.getBoundingClientRect()
+        return bounds.top <= markerY && bounds.bottom > markerY
+      })
+
+      setHeaderOnDarkSection(current => (
+        current === isOverDarkSection ? current : isOverDarkSection
+      ))
+    }
+
+    updateHeaderTheme()
+    window.addEventListener('scroll', updateHeaderTheme, { passive: true })
+    window.addEventListener('resize', updateHeaderTheme)
+
+    return () => {
+      window.removeEventListener('scroll', updateHeaderTheme)
+      window.removeEventListener('resize', updateHeaderTheme)
+    }
+  }, [])
 
   useEffect(() => {
     if (!pillarsRef.current || reduceMotion) return undefined
@@ -307,7 +339,10 @@ export default function Landing() {
 
   return (
     <Box className="landing-page">
-      <Box component="header" className="landing-header">
+      <Box
+        component="header"
+        className={`landing-header${headerOnDarkSection ? '' : ' landing-header--light'}`}
+      >
         <Container maxWidth="lg" className="landing-header__inner">
           <a className="landing-brand" href="#top" aria-label="MiTRAA-Edu home">
             <Box component="img" src="/logo.svg" alt="" />
@@ -333,7 +368,7 @@ export default function Landing() {
       </Box>
 
       <Box component="main">
-        <Box component="section" id="top" className="landing-hero">
+        <Box component="section" id="top" className="landing-hero" data-header-theme="dark">
           <video className="landing-hero__video" autoPlay muted loop playsInline aria-hidden="true">
             <source src={heroVideo} type="video/mp4" />
           </video>
@@ -454,7 +489,7 @@ export default function Landing() {
           </Container>
         </Box>
 
-        <Box component="section" id="pillars" className="landing-section landing-pillars" ref={pillarsRef}>
+        <Box component="section" id="pillars" className="landing-section landing-pillars" data-header-theme="dark" ref={pillarsRef}>
           <DeferredParticleField />
           <Container maxWidth="lg">
             <MotionBox {...reveal} className="landing-section-heading">
@@ -561,6 +596,7 @@ export default function Landing() {
                     component="section"
                     id={`area-${category.id}`}
                     className={`landing-feature-group landing-feature-group--${category.id}`}
+                    data-header-theme={category.id === 'examshield' ? 'dark' : undefined}
                     key={category.id}
                   >
                     <Box className="landing-feature-heading">
@@ -730,7 +766,7 @@ export default function Landing() {
           </Container>
         </Box>
 
-        <Box component="section" id="contact" className="landing-contact">
+        <Box component="section" id="contact" className="landing-contact" data-header-theme="dark">
           <Container maxWidth="lg" className="landing-contact__inner">
             <MotionBox {...reveal} className="landing-contact-copy">
               <span className="landing-kicker landing-kicker--light">See what a connected school can be</span>
