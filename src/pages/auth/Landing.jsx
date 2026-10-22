@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import gsap from 'gsap'
@@ -37,8 +37,14 @@ import AccountBalanceRoundedIcon from '@mui/icons-material/AccountBalanceRounded
 import AppsRoundedIcon from '@mui/icons-material/AppsRounded'
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
+import InstagramIcon from '@mui/icons-material/Instagram'
+import LinkedInIcon from '@mui/icons-material/LinkedIn'
+import FacebookIcon from '@mui/icons-material/Facebook'
+import XIcon from '@mui/icons-material/X'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROLE_DASHBOARD_PATH } from '../../data/mockData'
+import heroVideo from '../../assets/hero-video.mp4'
 import { faqs, featureCategories, platformPillars } from './landingFeatures'
 import './Landing.css'
 import 'lenis/dist/lenis.css'
@@ -104,6 +110,14 @@ const featureIcons = [
   MenuBookRoundedIcon,
 ]
 
+function renderAnimatedLetters(text) {
+  return Array.from(text).map((letter, index) => (
+    <span className="landing-hero__title-letter" key={`${letter}-${index}`}>
+      {letter === ' ' ? '\u00a0' : letter}
+    </span>
+  ))
+}
+
 function matchesRelease(status, filter) {
   if (filter === 'Phase 1') return status.toLowerCase().includes('phase 1')
   if (filter === 'Planned & future') {
@@ -123,6 +137,7 @@ export default function Landing() {
   const [showAllCategories, setShowAllCategories] = useState(false)
   const pillarsRef = useRef(null)
   const lenisRef = useRef(null)
+  const heroCopyRef = useRef(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -146,20 +161,23 @@ export default function Landing() {
     frameId = window.requestAnimationFrame(animateScroll)
 
     const context = gsap.context(() => {
-      gsap.utils.toArray('.landing-pillar-card').forEach(card => {
+      gsap.utils.toArray('.landing-pillar-card').forEach((card, index) => {
         gsap.fromTo(card, {
           autoAlpha: 0,
+          x: index % 2 === 0 ? -90 : 90,
           filter: 'blur(8px)',
         }, {
           autoAlpha: 1,
+          x: 0,
           filter: 'blur(0px)',
-          duration: 0.8,
+          duration: 0.9,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: card,
-            start: 'top 84%',
+            start: 'top 45%',
             once: true,
           },
+          onComplete: () => gsap.set(card, { clearProps: 'transform' }),
         })
       })
     }, pillarsRef)
@@ -170,6 +188,67 @@ export default function Landing() {
       lenis.destroy()
       lenisRef.current = null
     }
+  }, [reduceMotion])
+
+  useLayoutEffect(() => {
+    if (!heroCopyRef.current || reduceMotion) return undefined
+
+    const context = gsap.context(() => {
+      const sequence = gsap.timeline({ delay: 0.18 })
+      sequence.fromTo('.landing-eyebrow', {
+        autoAlpha: 0,
+        y: 18,
+      }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.45,
+        ease: 'power3.out',
+      })
+      sequence.fromTo('.landing-hero__title-letter', {
+        autoAlpha: 0,
+        yPercent: 75,
+        rotateX: -35,
+        scale: 0.85,
+      }, {
+        autoAlpha: 1,
+        yPercent: 0,
+        rotateX: 0,
+        scale: 1,
+        duration: 0.42,
+        stagger: 0.025,
+        ease: 'power4.out',
+      }, '-=0.08')
+      sequence.fromTo('.landing-hero__description', {
+        autoAlpha: 0,
+        y: 18,
+      }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.48,
+        ease: 'power3.out',
+      }, '+=0.08')
+      sequence.fromTo('.landing-hero__actions .MuiButton-root', {
+        autoAlpha: 0,
+        y: 18,
+      }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.48,
+        stagger: 0.12,
+        ease: 'power3.out',
+      }, '-=0.12')
+      sequence.fromTo('.landing-hero__proof', {
+        autoAlpha: 0,
+        y: 14,
+      }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.42,
+        ease: 'power3.out',
+      }, '-=0.1')
+    }, heroCopyRef)
+
+    return () => context.revert()
   }, [reduceMotion])
 
   const visibleCategories = useMemo(() => {
@@ -255,17 +334,29 @@ export default function Landing() {
 
       <Box component="main">
         <Box component="section" id="top" className="landing-hero">
+          <video className="landing-hero__video" autoPlay muted loop playsInline aria-hidden="true">
+            <source src={heroVideo} type="video/mp4" />
+          </video>
           <Container maxWidth="lg" className="landing-hero__inner">
-            <MotionBox {...reveal} className="landing-hero__copy">
+            <Box ref={heroCopyRef} className="landing-hero__copy">
               <Chip
                 icon={<AutoAwesomeRoundedIcon />}
                 label="ONE CONNECTED EDUCATION VISION"
                 className="landing-eyebrow"
               />
-              <Typography component="h1">
-                Smarter School Operations.
-                <span> Connected Learning.</span>
-                <strong> Trusted Assessments.</strong>
+              <Typography
+                component="h1"
+                aria-label="Smarter School Operations. Connected Learning. Trusted Assessments."
+              >
+                <span className="landing-hero__title-line" aria-hidden="true">
+                  {renderAnimatedLetters('Smarter School Operations.')}
+                </span>
+                <span className="landing-hero__title-line landing-hero__title-line--accent" aria-hidden="true">
+                  {renderAnimatedLetters('Connected Learning.')}
+                </span>
+                <strong className="landing-hero__title-line landing-hero__title-line--accent" aria-hidden="true">
+                  {renderAnimatedLetters('Trusted Assessments.')}
+                </strong>
               </Typography>
               <Typography className="landing-hero__description">
                 One connected platform for school operations, learning, assessment and family engagement.
@@ -289,7 +380,7 @@ export default function Landing() {
                 <span>·</span>
                 <Typography>{totalFeatures} capabilities</Typography>
               </Stack>
-            </MotionBox>
+            </Box>
 
             <Box className="landing-hero__art" aria-label="An illustration of connected school and learning tools" role="img">
               <div className="landing-art-orbit landing-art-orbit--one" />
@@ -659,50 +750,77 @@ export default function Landing() {
       </Box>
 
       <Box component="footer" className="landing-footer">
-        <Container maxWidth="lg" className="landing-footer__inner">
-          <Box className="landing-footer-cta">
-            <Box>
-              <span className="landing-footer-eyebrow">YOUR SCHOOL, IN SYNC</span>
-              <Typography component="h2">Better learning starts with a connected school.</Typography>
-              <Typography>Bring your community, everyday work and learning journeys into one thoughtful platform.</Typography>
-            </Box>
-            <Button className="landing-footer-cta-button" onClick={() => navigate('/register')} endIcon={<ArrowForwardRoundedIcon />}>
-              Let’s get started
-            </Button>
-          </Box>
+        <Container maxWidth={false} className="landing-footer__inner">
           <Box className="landing-footer-main">
             <Box className="landing-footer-brand-column">
               <a className="landing-brand" href="#top" aria-label="MiTRAA-Edu home">
                 <Box component="img" src="/logo.svg" alt="" />
                 <span>Edu</span>
               </a>
-              <Typography>Smarter school operations. Connected learning. Trusted assessments.</Typography>
+              <Typography>
+                Your big dreams deserve the right strategy. Fill out the form, pick a time that works for you, and let’s connect!
+              </Typography>
             </Box>
             <Box className="landing-footer-link-column">
-              <Typography component="h3">PLATFORM</Typography>
-              <a href="#pillars">Platform pillars</a>
-              <a href="#feature-explorer">Explore capabilities</a>
-              <a href="#roadmap">Product roadmap</a>
+              <Typography component="h3">Services</Typography>
+              <span>Generative AI Solutions</span>
+              <span>Web &amp; Application Development</span>
+              <span>Blockchain (Web3)</span>
+              <span>Enterprise Agile Development</span>
+              <span>Cyber Security</span>
+              <span>Enterprise Technology &amp; Performance</span>
             </Box>
             <Box className="landing-footer-link-column">
-              <Typography component="h3">COMMUNITY</Typography>
-              <a href="#benefits">For the school community</a>
-              <a href="#faq">Frequently asked questions</a>
-              <a href="#contact">Contact & next steps</a>
+              <Typography component="h3">Quick Links</Typography>
+              <a href="#pillars">Portfolio</a>
+              <a href="#feature-explorer">Case Study</a>
+              <a href="#roadmap">Resource Augmentation</a>
+              <a href="#contact">Careers</a>
+              <a href="#contact">News &amp; Events</a>
             </Box>
-            <Paper className="landing-footer-note" elevation={0}>
-              <span>MADE FOR EVERY SCHOOL COMMUNITY</span>
-              <Typography component="h3">One shared vision.</Typography>
-              <Typography>Role-appropriate experiences for students, teachers, families and school leaders.</Typography>
-              <a href="#benefits">Meet the community <ArrowForwardRoundedIcon /></a>
-            </Paper>
+            <Box className="landing-footer-social-column">
+              <Typography component="h3">Follow Us</Typography>
+              <Box className="landing-footer-socials" aria-label="Social media">
+                <span className="landing-social-icon landing-social-icon--instagram" role="img" aria-label="Instagram"><InstagramIcon /></span>
+                <span className="landing-social-icon landing-social-icon--linkedin" role="img" aria-label="LinkedIn"><LinkedInIcon /></span>
+                <span className="landing-social-icon landing-social-icon--facebook" role="img" aria-label="Facebook"><FacebookIcon /></span>
+                <span className="landing-social-icon landing-social-icon--x" role="img" aria-label="X"><XIcon /></span>
+                <span className="landing-social-icon landing-social-icon--whatsapp" role="img" aria-label="WhatsApp"><WhatsAppIcon /></span>
+              </Box>
+            </Box>
+          </Box>
+          <Box className="landing-footer-locations">
+            {[
+              {
+                zone: 'HEADQUARTERS',
+                city: 'Bhubaneswar, Odisha',
+                address: 'B-93, B.D.A. Duplex, Baramunda, Bhubaneswar, Khurda - 751003',
+              },
+              {
+                zone: 'NORTH ZONE',
+                city: 'Ambala, Haryana',
+                address: 'Plot No. 446 (HNS), HSIIDC Industrial Growth Centre, Sector 2, Saha, Ambala - 133104',
+              },
+              {
+                zone: 'SOUTH A ZONE',
+                city: 'Hyderabad, Telangana',
+                address: 'Third Floor, 303, Vedika Vintage, Madhapur, Chanda Naik Nagar, Survey of India Colony, Hyderabad',
+              },
+              {
+                zone: 'SOUTH B ZONE',
+                city: 'Malappuram, Kerala',
+                address: 'Thirumangalam, Kavanur, Palakkad P.O., Kuzhimanna (Via), Malappuram - 673641',
+              },
+            ].map(({ zone, city, address }) => (
+              <Box className="landing-footer-location" key={zone}>
+                <span>{zone}</span>
+                <Typography component="h3">{city}</Typography>
+                <Typography>{address}</Typography>
+              </Box>
+            ))}
           </Box>
           <Box className="landing-footer-bottom">
-            <Typography>© 2026 MiTRAA-Edu. All rights reserved.</Typography>
-            <Box>
-              <a href="#top">Back to top ↑</a>
-              <a href="#faq">FAQs</a>
-            </Box>
+            <Typography>© 2026 MiTRAA. All Rights Reserved.</Typography>
           </Box>
         </Container>
       </Box>
