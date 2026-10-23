@@ -1,7 +1,46 @@
+import { useLayoutEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import gsap from 'gsap'
+import preloaderImage from '../../assets/preloader.png'
 
 export default function Preloader() {
   const reduceMotion = useReducedMotion()
+  const imageRef = useRef(null)
+
+  useLayoutEffect(() => {
+    if (!imageRef.current) return undefined
+
+    const context = gsap.context(() => {
+      if (reduceMotion) {
+        gsap.set(imageRef.current, { autoAlpha: 1, y: 0, scale: 1, rotation: 0 })
+        return
+      }
+
+      gsap.timeline()
+        .fromTo(
+          imageRef.current,
+          { autoAlpha: 0, y: 28, scale: 0.82, rotation: -6 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            duration: 0.9,
+            ease: 'back.out(1.7)',
+          },
+        )
+        .to(imageRef.current, {
+          scale: 1.035,
+          rotation: 1.5,
+          duration: 1.2,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        })
+    })
+
+    return () => context.revert()
+  }, [reduceMotion])
 
   return (
     <motion.div
@@ -21,43 +60,12 @@ export default function Preloader() {
         background: 'radial-gradient(ellipse at 50% 45%, #fff 0%, #f7f6ff 52%, #eeedff 100%)',
       }}
     >
-      {!reduceMotion && (
-        <>
-          <motion.div
-            aria-hidden="true"
-            animate={{ scale: [0.92, 1.08, 0.92], opacity: [0.25, 0.48, 0.25] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              position: 'absolute',
-              width: 'min(72vw, 560px)',
-              aspectRatio: 1,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(96,88,225,0.17), rgba(96,88,225,0) 68%)',
-            }}
-          />
-          <motion.div
-            aria-hidden="true"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-            style={{
-              position: 'absolute',
-              width: 260,
-              height: 260,
-              borderRadius: '50%',
-              border: '1px solid rgba(96,88,225,0.12)',
-            }}
-          />
-        </>
-      )}
-
-      <div style={{ position: 'relative', display: 'grid', justifyItems: 'center', gap: 26 }}>
-        <motion.img
-          src="/logo.svg"
-          alt="MiTRAA"
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.82, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0.01 : 0.8, ease: [0.16, 1, 0.3, 1] }}
-          style={{ width: 'min(54vw, 220px)', height: 'auto' }}
+      <div style={{ position: 'relative', display: 'grid', justifyItems: 'center', gap: 20 }}>
+        <img
+          ref={imageRef}
+          src={preloaderImage}
+          alt="MiTRAA student learning"
+          style={{ width: 'min(62vw, 270px)', height: 'auto' }}
         />
         <div
           aria-hidden="true"
@@ -81,19 +89,6 @@ export default function Preloader() {
             }}
           />
         </div>
-        <span
-          style={{
-            marginTop: -18,
-            color: '#777493',
-            fontFamily: 'inherit',
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Connected learning
-        </span>
       </div>
     </motion.div>
   )
