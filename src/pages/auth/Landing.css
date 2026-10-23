@@ -594,7 +594,7 @@
 .landing-feature-group--operations { --area-accent:#d18735; --area-wash:#fff2df; }
 .landing-feature-group--operations .landing-feature-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
 .landing-feature-group--operations .landing-feature-card { min-height: 166px; flex-direction: column; gap: 9px; border-radius: 17px !important; background: #fffefa !important; }
-.landing-feature-group--operations .landing-feature-card:nth-child(odd) { transform: translateY(6px); }
+.landing-feature-group--operations .landing-feature-card--odd { transform: translateY(6px); }
 .landing-feature-group--operations .landing-feature-card:hover { transform: translateY(-4px); }
 .landing-feature-group--operations .landing-feature-mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 50%; }
 
@@ -607,7 +607,7 @@
 .landing-feature-group--assessments { --area-accent:#d17640; --area-wash:#fff0e6; }
 .landing-feature-group--assessments .landing-feature-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .landing-feature-group--assessments .landing-feature-card { min-height: 155px; align-items: center; border-radius: 12px !important; background: linear-gradient(160deg,#fffaf5,#fff 65%) !important; }
-.landing-feature-group--assessments .landing-feature-card:nth-child(3n + 1) { border-top: 3px solid var(--area-accent); }
+.landing-feature-group--assessments .landing-feature-card--row-start { border-top: 3px solid var(--area-accent); }
 .landing-feature-group--assessments .landing-feature-index { top: auto; right: 13px; bottom: 12px; padding: 4px 6px; border-radius: 5px; background: var(--area-wash); }
 .landing-feature-group--assessments .landing-feature-mark { width: 39px; height: 39px; flex-basis: 39px; border-radius: 12px; }
 
@@ -634,7 +634,7 @@
 .landing-feature-group--practicepod { --area-accent:#288fa3; --area-wash:#e6f7fa; }
 .landing-feature-group--practicepod .landing-feature-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
 .landing-feature-group--practicepod .landing-feature-card { min-height: 140px; align-items: center; padding: 22px !important; border-radius: 18px !important; background: linear-gradient(110deg,#eefafd,#fff 68%) !important; }
-.landing-feature-group--practicepod .landing-feature-card:nth-child(even) { border-bottom: 3px solid #71bdca; }
+.landing-feature-group--practicepod .landing-feature-card--even { border-bottom: 3px solid #71bdca; }
 .landing-feature-group--practicepod .landing-feature-mark { width: 43px; height: 43px; flex-basis: 43px; border-radius: 14px; }
 
 .landing-feature-group--finance { --area-accent:#318b62; --area-wash:#e9f7ef; }
@@ -1147,7 +1147,40 @@
 .landing-feature-heading { align-items: flex-end; margin-bottom: 23px; }
 .landing-feature-heading h3 { max-width: 690px; font-size: clamp(23px, 3vw, 32px); }
 .landing-feature-number { font-size: 9px !important; letter-spacing: .18em; }
-.landing-feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+.landing-explorer .landing-feature-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.landing-feature-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  transition: grid-template-columns .42s cubic-bezier(.16,1,.3,1);
+}
+.landing-feature-row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.landing-feature-row--1 { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 601px) {
+  .landing-feature-row--2:has(> .landing-feature-card:nth-child(1):hover) {
+    grid-template-columns: 1.4fr .8fr;
+  }
+  .landing-feature-row--2:has(> .landing-feature-card:nth-child(2):hover) {
+    grid-template-columns: .8fr 1.4fr;
+  }
+  .landing-feature-row:has(> .landing-feature-card:nth-child(3)):has(> .landing-feature-card:nth-child(1):hover) {
+    grid-template-columns: 1.4fr .8fr .8fr;
+  }
+  .landing-feature-row:has(> .landing-feature-card:nth-child(3)):has(> .landing-feature-card:nth-child(2):hover) {
+    grid-template-columns: .8fr 1.4fr .8fr;
+  }
+  .landing-feature-row:has(> .landing-feature-card:nth-child(3)):has(> .landing-feature-card:nth-child(3):hover) {
+    grid-template-columns: .8fr .8fr 1.4fr;
+  }
+}
+.landing-feature-group .landing-feature-row > .landing-feature-card {
+  grid-column: auto !important;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .landing-feature-row,
+  .landing-feature-row--2 { grid-template-columns: minmax(0, 1fr); }
+}
 .landing-feature-group .landing-feature-card {
   position: relative;
   display: grid !important;
@@ -1500,7 +1533,7 @@
   .landing-role-grid { grid-template-columns: 1fr; }
   .landing-role-card, .landing-role-card--1, .landing-role-card--6 { grid-column: auto; grid-row: auto; min-height: 190px; padding: 22px !important; }
   .landing-role-card--1 h3 { margin-top: 36px; font-size: 28px; }
-  .landing-role-card--1 .landing-role-art { right: 20px; bottom: 20px; width: 72px; height: 72px; }
+  .landing-role-card--1 .landing-role-art { right: 20px; bottom: 65px; width: 72px; height: 72px; }
   .landing-role-card--1 .landing-role-art svg { font-size: 38px; }
   .landing-journey-grid { grid-template-columns: 1fr; }
   .landing-journey-card, .landing-journey-card:nth-child(1), .landing-journey-card:nth-child(6) { grid-column: auto; min-height: 215px; }

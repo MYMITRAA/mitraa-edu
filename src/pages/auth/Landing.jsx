@@ -591,81 +591,94 @@ export default function Landing() {
 
             {displayedCategories.length ? (
               <Box className="landing-feature-groups" id="feature-results">
-                {displayedCategories.map((category, categoryIndex) => (
-                  <Box
-                    component="section"
-                    id={`area-${category.id}`}
-                    className={`landing-feature-group landing-feature-group--${category.id}`}
-                    data-header-theme={category.id === 'examshield' ? 'dark' : undefined}
-                    key={category.id}
-                  >
-                    <Box className="landing-feature-heading">
-                      <Box>
-                        <Typography className="landing-feature-number">{category.number} / FEATURE AREA</Typography>
-                        <Typography component="h3">{category.title}</Typography>
-                        <Typography>{category.description}</Typography>
+                {displayedCategories.map((category, categoryIndex) => {
+                  const visibleFeatures = category.visibleFeatures
+                    .slice(0, search.trim() || expandedCategories.has(category.id) ? category.visibleFeatures.length : 3)
+                  const featureRows = []
+                  for (let index = 0; index < visibleFeatures.length; index += 3) {
+                    featureRows.push(visibleFeatures.slice(index, index + 3).map((feature, offset) => [feature, index + offset]))
+                  }
+
+                  return (
+                    <Box
+                      component="section"
+                      id={`area-${category.id}`}
+                      className={`landing-feature-group landing-feature-group--${category.id}`}
+                      data-header-theme={category.id === 'examshield' ? 'dark' : undefined}
+                      key={category.id}
+                    >
+                      <Box className="landing-feature-heading">
+                        <Box>
+                          <Typography className="landing-feature-number">{category.number} / FEATURE AREA</Typography>
+                          <Typography component="h3">{category.title}</Typography>
+                          <Typography>{category.description}</Typography>
+                        </Box>
+                        <Chip label={category.status} className="landing-status-chip" />
                       </Box>
-                      <Chip label={category.status} className="landing-status-chip" />
-                    </Box>
-                    <Box className="landing-feature-grid">
-                      {category.visibleFeatures
-                        .slice(0, search.trim() || expandedCategories.has(category.id) ? category.visibleFeatures.length : 3)
-                        .map(([title, description], index) => {
-                        const FeatureIcon = featureIcons[(index + categoryIndex * 3) % featureIcons.length]
-                        const layoutVariant = index === 0 ? 0 : (index + categoryIndex) % 4 + 1
-                        return (
-                        <MotionPaper
-                          {...reveal}
-                          key={title}
-                          className={`landing-feature-card landing-feature-card--${layoutVariant}`}
-                          elevation={0}
-                          style={{ '--feature-order': index + 1 }}
-                          whileHover={reduceMotion ? undefined : {
-                            y: -7,
-                            scale: 1.018,
-                            transition: { duration: 0.22, ease: 'easeOut' },
-                          }}
-                          whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                          transition={{
-                            ...reveal.transition,
-                            delay: reduceMotion ? 0 : (index % 8) * 0.045,
-                            duration: reduceMotion ? 0 : 0.76,
-                          }}
+                      <Box className="landing-feature-grid">
+                        {featureRows.map((row, rowIndex) => (
+                          <Box className={`landing-feature-row landing-feature-row--${row.length}`} key={`${category.id}-row-${rowIndex}`}>
+                            {row.map(([[title, description], index]) => {
+                              const FeatureIcon = featureIcons[(index + categoryIndex * 3) % featureIcons.length]
+                              const layoutVariant = index === 0 ? 0 : (index + categoryIndex) % 4 + 1
+                              const positionClass = index % 2 === 0 ? 'landing-feature-card--odd' : 'landing-feature-card--even'
+                              const rowStartClass = index % 3 === 0 ? 'landing-feature-card--row-start' : ''
+                              return (
+                                <MotionPaper
+                                  {...reveal}
+                                  key={title}
+                                  className={`landing-feature-card landing-feature-card--${layoutVariant} ${positionClass} ${rowStartClass}`}
+                                  elevation={0}
+                                  style={{ '--feature-order': index + 1 }}
+                                  whileHover={reduceMotion ? undefined : {
+                                    y: -7,
+                                    scale: 1.018,
+                                    transition: { duration: 0.22, ease: 'easeOut' },
+                                  }}
+                                  whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                                  transition={{
+                                    ...reveal.transition,
+                                    delay: reduceMotion ? 0 : (index % 8) * 0.045,
+                                    duration: reduceMotion ? 0 : 0.76,
+                                  }}
+                                >
+                                  <span className={`landing-feature-art landing-feature-art--${layoutVariant}`} aria-hidden="true">
+                                    {index === 0 ? (
+                                      <img src={`/animations/showcase-${categoryIndex % 4 + 1}.gif`} alt="" loading="lazy" />
+                                    ) : (
+                                      <>
+                                        <i /><i /><i /><b><FeatureIcon /></b>
+                                      </>
+                                    )}
+                                  </span>
+                                  <span className="landing-feature-mark"><FeatureIcon /></span>
+                                  <span className="landing-feature-index">{String(index + 1).padStart(2, '0')}</span>
+                                  <div className="landing-feature-copy">
+                                    <Typography component="h4">{title}</Typography>
+                                    <Typography>{description}</Typography>
+                                  </div>
+                                </MotionPaper>
+                              )
+                            })}
+                          </Box>
+                        ))}
+                      </Box>
+                      {!search.trim() && category.visibleFeatures.length > 3 && (
+                        <button
+                          type="button"
+                          className="landing-feature-expand"
+                          aria-expanded={expandedCategories.has(category.id)}
+                          onClick={() => toggleCategoryExpanded(category.id)}
                         >
-                          <span className={`landing-feature-art landing-feature-art--${layoutVariant}`} aria-hidden="true">
-                            {index === 0 ? (
-                              <img src={`/animations/showcase-${categoryIndex % 4 + 1}.gif`} alt="" loading="lazy" />
-                            ) : (
-                              <>
-                                <i /><i /><i /><b><FeatureIcon /></b>
-                              </>
-                            )}
-                          </span>
-                          <span className="landing-feature-mark"><FeatureIcon /></span>
-                          <span className="landing-feature-index">{String(index + 1).padStart(2, '0')}</span>
-                          <div className="landing-feature-copy">
-                            <Typography component="h4">{title}</Typography>
-                            <Typography>{description}</Typography>
-                          </div>
-                        </MotionPaper>
-                        )
-                      })}
+                          {expandedCategories.has(category.id)
+                            ? 'Show less'
+                            : `View all ${category.visibleFeatures.length} capabilities`}
+                          <ExpandMoreRoundedIcon />
+                        </button>
+                      )}
                     </Box>
-                    {!search.trim() && category.visibleFeatures.length > 3 && (
-                      <button
-                        type="button"
-                        className="landing-feature-expand"
-                        aria-expanded={expandedCategories.has(category.id)}
-                        onClick={() => toggleCategoryExpanded(category.id)}
-                      >
-                        {expandedCategories.has(category.id)
-                          ? 'Show less'
-                          : `View all ${category.visibleFeatures.length} capabilities`}
-                        <ExpandMoreRoundedIcon />
-                      </button>
-                    )}
-                  </Box>
-                ))}
+                  )
+                })}
                 {!catalogIsFiltered && visibleCategories.length > featuredCategoryIds.length && (
                   <button
                     type="button"
