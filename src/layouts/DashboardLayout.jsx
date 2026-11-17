@@ -134,9 +134,20 @@ const ROLE_COLORS = {
 }
 
 const ROLE_LABELS = {
-  student: 'Student Dashboard', teacher: 'Teacher Dashboard', parent: 'Parent Dashboard',
-  principal: 'Principal Dashboard', management: 'Management Dashboard', examcontroller: 'Exam Controller',
+  admin: 'Administrator Workspace', teacher: 'Teacher Workspace', staff: 'Staff Workspace',
+  finance: 'Finance Workspace', preschool: 'Preschool Workspace', parent: 'Parent Workspace',
 }
+
+const V1_MODULES = {
+  admin: ['overview','institution','learners','attendance','notices','homework','fees','care','pickup','transport','requests','reports','audit'],
+  teacher: ['overview','learners','attendance','notices','homework','requests','reports'],
+  staff: ['overview','institution','learners','attendance','notices','pickup','transport','requests','reports','audit'],
+  finance: ['overview','learners','fees','reports','audit'],
+  preschool: ['overview','learners','attendance','notices','homework','care','pickup','requests'],
+  parent: ['overview','attendance','notices','homework','fees','care','requests'],
+}
+const V1_LABELS = { overview:'Overview', institution:'Institution setup', learners:'Learners & guardians', attendance:'Attendance', notices:'Notices', homework:'Homework', fees:'Fees & receipts', care:'Daily care log', pickup:'Pickup & handover', transport:'Transport fallback', requests:'Requests', reports:'Basic reports', audit:'Audit history' }
+const V1_ICONS = { overview:<HomeIcon />, institution:<BusinessIcon />, learners:<PeopleIcon />, attendance:<EventAvailableIcon />, notices:<CampaignIcon />, homework:<AssignmentIcon />, fees:<PaymentIcon />, care:<FamilyRestroomIcon />, pickup:<CheckCircleIcon />, transport:<DomainIcon />, requests:<RequestPageIcon />, reports:<AssessmentIcon />, audit:<HistoryIcon /> }
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
@@ -145,7 +156,9 @@ export default function DashboardLayout() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [open, setOpen] = useState(!isMobile)
   const role = user?.role || 'student'
-  const menu = MENUS[role] || []
+  const menu = V1_MODULES[role]
+    ? V1_MODULES[role].map(id => ({ id, label: V1_LABELS[id], icon: V1_ICONS[id], path: `/${role}${id === 'overview' ? '' : `/${id}`}` }))
+    : MENUS[role] || []
   const color = ROLE_COLORS[role] || '#1e40af'
 
   const handleLogout = () => {
