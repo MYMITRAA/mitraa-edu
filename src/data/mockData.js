@@ -40,10 +40,10 @@ export const PRACTICE_PAPERS = [
 ]
 
 export const ROLE_DASHBOARD_PATH = {
-  student: '/student',
+  admin: '/admin',
   teacher: '/teacher',
+  staff: '/staff',
+  finance: '/finance',
+  preschool: '/preschool',
   parent: '/parent',
-  principal: '/principal',
-  management: '/management',
-  examcontroller: '/examcontroller',
 }

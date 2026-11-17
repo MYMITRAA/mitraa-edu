@@ -88,6 +88,7 @@ import ExamResults from './pages/examcontroller/Results'
 import ExamAudit from './pages/examcontroller/Audit'
 import ExamReports from './pages/examcontroller/Reports'
 import ExamProfile from './pages/examcontroller/Profile'
+import V1Workspace from './pages/v1/Workspace'
 
 function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user } = useAuth()
@@ -126,9 +127,17 @@ export default function App() {
   <Route path="/" element={<Landing />} />
   <Route path="/select-role" element={<SelectRole />} />
   <Route path="/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
+  <Route path="/register" element={<Navigate to="/select-role" replace />} />
   <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/2fa" element={<TwoFactor />} />
+
+  {/* MiTRAA Edu V1 pilot workspaces */}
+  {['admin', 'teacher', 'staff', 'finance', 'preschool', 'parent'].map(role => (
+    <Route key={role} path={`/${role}`} element={<ProtectedRoute roles={[role]}><DashboardLayout /></ProtectedRoute>}>
+      <Route index element={<V1Workspace />} />
+      <Route path=":module" element={<V1Workspace />} />
+    </Route>
+  ))}
 
   {/* Student */}
   <Route path="/student" element={<ProtectedRoute roles={['student']}><DashboardLayout /></ProtectedRoute>}>
